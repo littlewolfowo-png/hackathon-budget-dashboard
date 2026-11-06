@@ -261,6 +261,7 @@ if "年度總覽" in csv_data and not csv_data["年度總覽"].empty:
 st.markdown("---")
 
 
+
 # =====================================
 # 8. 年度預算總覽
 # =====================================
@@ -272,6 +273,7 @@ if page == "年度預算總覽":
     if "年度總覽" in csv_data and not csv_data["年度總覽"].empty:
 
         df = csv_data["年度總覽"]
+        summary = df.iloc[0]
 
         st.success("已成功讀取模組二年度總覽資料")
 
@@ -279,76 +281,159 @@ if page == "年度預算總覽":
         # 1. 年度財務 KPI
         # -----------------------------
 
+        # 重新依照金額計算差異率，避免不清楚原始差異率的分母
+        if annual_budget != 0:
+            calculated_rate = (
+                forecast_variance / annual_budget
+            ) * 100
+        else:
+            calculated_rate = 0
+
         st.subheader("年度財務指標")
 
         col1, col2, col3, col4 = st.columns(4)
 
-        col1.metric("全年預算", f"NT$ {annual_budget:,.0f}")
-        col2.metric("預測全年支出", f"NT$ {forecast_spending:,.0f}")
-        col3.metric("預測差異", f"NT$ {forecast_variance:,.0f}")
-        col4.metric("預測差異率", f"{variance_rate:.2f}%")
+        col1.metric(
+            "全年既定預算",
+            f"NT$ {annual_budget:,.0f}"
+        )
+
+        col2.metric(
+            "AI 預測全年支出",
+            f"NT$ {forecast_spending:,.0f}"
+        )
+
+        col3.metric(
+            "預測差異金額",
+            f"NT$ {forecast_variance:+,.0f}"
+        )
+
+        col4.metric(
+            "預測差異率",
+            f"{calculated_rate:+.2f}%"
+        )
 
         st.markdown("---")
 
         # -----------------------------
-        # 2. 預算風險燈號
+        # 2. 年度預算風險燈號
         # -----------------------------
 
         st.subheader("🚦 年度預算風險燈號")
 
-        if forecast_variance > 0:
-            light_color = "#DC2626"
-            light_status = "紅燈"
-            light_message = "預測支出超出全年預算，建議優先檢視支出。"
+        # 優先讀取模組二是否有提供年度風險燈號
+        original_risk = str(
+            summary.get("年度風險燈號", "")
+        ).strip()
 
-        elif variance_rate <= -10:
-            light_color = "#16A34A"
+        if "藍" in original_risk:
+            light_status = "藍燈"
+            light_color = "#3B82F6"
+            light_message = "模組二判定為藍燈，請參考原始風險定義。"
+
+        elif forecast_variance > 0:
+            light_status = "紅燈"
+            light_color = "#EF4444"
+            light_message = (
+                f"AI 預測支出高於既定預算 "
+                f"NT$ {forecast_variance:,.0f}，"
+                f"預測超支 {calculated_rate:.2f}%。"
+            )
+
+        elif calculated_rate <= -10:
             light_status = "綠燈"
-            light_message = "目前預測支出低於預算，執行狀況正常。"
+            light_color = "#22C55E"
+            light_message = (
+                f"AI 預測支出低於既定預算 "
+                f"NT$ {abs(forecast_variance):,.0f}，"
+                f"低於預算 {abs(calculated_rate):.2f}%。"
+            )
 
         else:
-            light_color = "#EAB308"
             light_status = "黃燈"
-            light_message = "預算使用狀況接近警戒區間，建議持續觀察。"
+            light_color = "#EAB308"
+            light_message = (
+                f"AI 預測支出低於既定預算 "
+                f"NT$ {abs(forecast_variance):,.0f}，"
+                f"差異率 {calculated_rate:.2f}%，"
+                f"建議持續觀察。"
+            )
+
+        # 四顆燈，只點亮目前狀態
+        light_colors = {
+            "紅燈": "#EF4444" if light_status == "紅燈" else "#444444",
+            "黃燈": "#EAB308" if light_status == "黃燈" else "#444444",
+            "綠燈": "#22C55E" if light_status == "綠燈" else "#444444",
+            "藍燈": "#3B82F6" if light_status == "藍燈" else "#444444"
+        }
 
         st.markdown(
             f"""
             <div style="
                 display:flex;
                 align-items:center;
-                gap:20px;
+                gap:24px;
                 background:#202124;
-                padding:20px;
-                border-radius:15px;
-                max-width:650px;
+                padding:22px;
+                border-radius:16px;
+                max-width:750px;
+                margin-bottom:12px;
             ">
                 <div style="
-                    background:#111111;
+                    background:#090909;
                     padding:12px;
                     border-radius:30px;
                     display:flex;
                     flex-direction:column;
-                    gap:8px;
+                    gap:9px;
                 ">
                     <div style="
-                        width:28px;height:28px;border-radius:50%;
-                        background:{light_color if light_status == '紅燈' else '#444444'};
+                        width:30px;height:30px;border-radius:50%;
+                        background:{light_colors['紅燈']};
+                        box-shadow:0 0 10px {light_colors['紅燈']};
                     "></div>
+
                     <div style="
-                        width:28px;height:28px;border-radius:50%;
-                        background:{light_color if light_status == '黃燈' else '#444444'};
+                        width:30px;height:30px;border-radius:50%;
+                        background:{light_colors['黃燈']};
+                        box-shadow:0 0 10px {light_colors['黃燈']};
                     "></div>
+
                     <div style="
-                        width:28px;height:28px;border-radius:50%;
-                        background:{light_color if light_status == '綠燈' else '#444444'};
+                        width:30px;height:30px;border-radius:50%;
+                        background:{light_colors['綠燈']};
+                        box-shadow:0 0 10px {light_colors['綠燈']};
+                    "></div>
+
+                    <div style="
+                        width:30px;height:30px;border-radius:50%;
+                        background:{light_colors['藍燈']};
+                        box-shadow:0 0 10px {light_colors['藍燈']};
                     "></div>
                 </div>
+
                 <div style="color:white;">
-                    <h2 style="margin:0;color:{light_color};">
+                    <h2 style="
+                        margin:0;
+                        color:{light_color};
+                    ">
                         {light_status}
                     </h2>
-                    <p style="margin:8px 0 0 0;">
+
+                    <p style="
+                        margin:10px 0 0 0;
+                        font-size:16px;
+                        line-height:1.7;
+                    ">
                         {light_message}
+                    </p>
+
+                    <p style="
+                        margin:5px 0 0 0;
+                        color:#AAAAAA;
+                        font-size:12px;
+                    ">
+                        比較基準：既定全年預算
                     </p>
                 </div>
             </div>
@@ -362,10 +447,10 @@ if page == "年度預算總覽":
         # 3. 年度預算與預測支出比較
         # -----------------------------
 
-        st.subheader("年度預算與預測支出比較")
+        st.subheader("📊 年度預算與 AI 預測支出比較")
 
         comparison_df = pd.DataFrame({
-            "項目": ["全年預算", "預測全年支出"],
+            "項目": ["全年既定預算", "AI 預測全年支出"],
             "金額": [annual_budget, forecast_spending]
         })
 
@@ -375,19 +460,24 @@ if page == "年度預算總覽":
             y="金額",
             color="項目",
             text="金額",
-            title="全年預算 vs 預測全年支出",
+            title="全年既定預算 vs AI 預測全年支出",
             color_discrete_sequence=["#60A5FA", "#F59E0B"]
         )
 
         fig.update_traces(
             texttemplate="NT$ %{y:,.0f}",
-            textposition="outside"
+            textposition="outside",
+            cliponaxis=False
         )
 
         fig.update_layout(
             yaxis_title="金額（NT$）",
             xaxis_title="",
-            showlegend=False
+            showlegend=False,
+            yaxis_range=[
+                0,
+                max(annual_budget, forecast_spending) * 1.2
+            ]
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -397,12 +487,14 @@ if page == "年度預算總覽":
         # -----------------------------
 
         with st.expander("查看年度總覽原始資料"):
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(
+                df,
+                use_container_width=True,
+                hide_index=True
+            )
 
     else:
         st.warning("目前無法讀取年度總覽 CSV")
-
-
 
 # =====================================
 # 9. 部門預算分析
