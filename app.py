@@ -710,7 +710,7 @@ elif page == "部門預算分析":
         # 完整資料
         # =========================
 
-                with st.expander("查看部門完整分析資料"):
+            with st.expander("查看部門完整分析資料"):
             st.write("資料筆數：", len(df))
             st.write("欄位名稱：", df.columns.tolist())
             st.dataframe(df, use_container_width=True)
