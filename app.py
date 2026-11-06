@@ -394,7 +394,8 @@ if page == "年度預算總覽":
                 "></div>
             """
 
-        st.markdown(
+        
+        st.html(
             f"""
             <div style="
                 display:flex;
@@ -428,8 +429,7 @@ if page == "年度預算總覽":
                     </small>
                 </div>
             </div>
-            """,
-            unsafe_allow_html=True
+            """
         )
 
 
