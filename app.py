@@ -706,18 +706,19 @@ elif page == "部門預算分析":
                 allow_unsafe_jscode=True
             )
 
-                # =========================
+                       # =========================
         # 完整資料
         # =========================
 
-            with st.expander("查看部門完整分析資料"):
-                st.write("資料筆數：", len(df))
-                st.write("欄位名稱：", df.columns.tolist())
-                st.dataframe(df, use_container_width=True)
+        with st.expander("查看部門完整分析資料"):
+            st.dataframe(
+                df,
+                use_container_width=True,
+                hide_index=True
+            )
 
     else:
         st.warning("目前無法讀取部門分析 CSV")
-
 
 # =====================================
 # 10. 科目預算分析
