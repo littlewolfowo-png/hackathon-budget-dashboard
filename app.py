@@ -196,7 +196,10 @@ col1, col2, col3 = st.columns(3)
 
 col1.metric("成功讀取 CSV", f"{len(csv_data)} / 7")
 col2.metric("成功讀取 JSON", f"{len(json_data)} / 2")
-col3.metric("資料夾狀態", "正常" if DATA_DIR.exists() else "無法連線")
+col3.metric(
+    "Google Drive 狀態",
+    "正常" if drive_connected else "無法連線"
+)
 
 if csv_errors or json_errors:
     with st.expander("⚠️ 查看資料讀取問題"):
