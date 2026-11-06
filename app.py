@@ -260,6 +260,7 @@ if "年度總覽" in csv_data and not csv_data["年度總覽"].empty:
 
 st.markdown("---")
 
+
 # =====================================
 # 8. 年度預算總覽
 # =====================================
@@ -268,39 +269,139 @@ if page == "年度預算總覽":
 
     st.header("📈 年度預算總覽")
 
-    if "年度總覽" in csv_data:
+    if "年度總覽" in csv_data and not csv_data["年度總覽"].empty:
 
         df = csv_data["年度總覽"]
 
         st.success("已成功讀取模組二年度總覽資料")
 
-        st.subheader("年度預算資料")
-        st.dataframe(df, use_container_width=True)
+        # -----------------------------
+        # 1. 年度財務 KPI
+        # -----------------------------
 
-        # 顯示數值欄位的比較圖
-        numeric_columns = df.select_dtypes(
-            include="number"
-        ).columns.tolist()
+        st.subheader("年度財務指標")
 
-        if len(numeric_columns) >= 1:
-            st.subheader("數值資料視覺化")
+        col1, col2, col3, col4 = st.columns(4)
 
-            selected_column = st.selectbox(
-                "選擇分析欄位",
-                numeric_columns
-            )
+        col1.metric("全年預算", f"NT$ {annual_budget:,.0f}")
+        col2.metric("預測全年支出", f"NT$ {forecast_spending:,.0f}")
+        col3.metric("預測差異", f"NT$ {forecast_variance:,.0f}")
+        col4.metric("預測差異率", f"{variance_rate:.2f}%")
 
-            fig = px.bar(
-                df,
-                x=df.columns[0],
-                y=selected_column,
-                title=f"{selected_column} 分析"
-            )
+        st.markdown("---")
 
-            st.plotly_chart(fig, use_container_width=True)
+        # -----------------------------
+        # 2. 預算風險燈號
+        # -----------------------------
+
+        st.subheader("🚦 年度預算風險燈號")
+
+        if forecast_variance > 0:
+            light_color = "#DC2626"
+            light_status = "紅燈"
+            light_message = "預測支出超出全年預算，建議優先檢視支出。"
+
+        elif variance_rate <= -10:
+            light_color = "#16A34A"
+            light_status = "綠燈"
+            light_message = "目前預測支出低於預算，執行狀況正常。"
+
+        else:
+            light_color = "#EAB308"
+            light_status = "黃燈"
+            light_message = "預算使用狀況接近警戒區間，建議持續觀察。"
+
+        st.markdown(
+            f"""
+            <div style="
+                display:flex;
+                align-items:center;
+                gap:20px;
+                background:#202124;
+                padding:20px;
+                border-radius:15px;
+                max-width:650px;
+            ">
+                <div style="
+                    background:#111111;
+                    padding:12px;
+                    border-radius:30px;
+                    display:flex;
+                    flex-direction:column;
+                    gap:8px;
+                ">
+                    <div style="
+                        width:28px;height:28px;border-radius:50%;
+                        background:{light_color if light_status == '紅燈' else '#444444'};
+                    "></div>
+                    <div style="
+                        width:28px;height:28px;border-radius:50%;
+                        background:{light_color if light_status == '黃燈' else '#444444'};
+                    "></div>
+                    <div style="
+                        width:28px;height:28px;border-radius:50%;
+                        background:{light_color if light_status == '綠燈' else '#444444'};
+                    "></div>
+                </div>
+                <div style="color:white;">
+                    <h2 style="margin:0;color:{light_color};">
+                        {light_status}
+                    </h2>
+                    <p style="margin:8px 0 0 0;">
+                        {light_message}
+                    </p>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown("---")
+
+        # -----------------------------
+        # 3. 年度預算與預測支出比較
+        # -----------------------------
+
+        st.subheader("年度預算與預測支出比較")
+
+        comparison_df = pd.DataFrame({
+            "項目": ["全年預算", "預測全年支出"],
+            "金額": [annual_budget, forecast_spending]
+        })
+
+        fig = px.bar(
+            comparison_df,
+            x="項目",
+            y="金額",
+            color="項目",
+            text="金額",
+            title="全年預算 vs 預測全年支出",
+            color_discrete_sequence=["#60A5FA", "#F59E0B"]
+        )
+
+        fig.update_traces(
+            texttemplate="NT$ %{y:,.0f}",
+            textposition="outside"
+        )
+
+        fig.update_layout(
+            yaxis_title="金額（NT$）",
+            xaxis_title="",
+            showlegend=False
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        # -----------------------------
+        # 4. 原始資料
+        # -----------------------------
+
+        with st.expander("查看年度總覽原始資料"):
+            st.dataframe(df, use_container_width=True)
 
     else:
         st.warning("目前無法讀取年度總覽 CSV")
+
 
 
 # =====================================
