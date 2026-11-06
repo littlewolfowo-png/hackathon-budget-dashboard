@@ -367,6 +367,33 @@ if page == "年度預算總覽":
             "藍燈": "#3B82F6" if light_status == "藍燈" else "#444444"
         }
 
+        
+        # 四色交通號誌
+        light_colors = {
+            "紅燈": "#EF4444",
+            "黃燈": "#EAB308",
+            "綠燈": "#22C55E",
+            "藍燈": "#3B82F6"
+        }
+
+        traffic_lights = ""
+
+        for name, color in light_colors.items():
+
+            current_color = (
+                color if light_status == name else "#444444"
+            )
+
+            traffic_lights += f"""
+                <div style="
+                    width:30px;
+                    height:30px;
+                    border-radius:50%;
+                    background:{current_color};
+                    box-shadow:0 0 10px {current_color};
+                "></div>
+            """
+
         st.markdown(
             f"""
             <div style="
@@ -377,7 +404,6 @@ if page == "年度預算總覽":
                 padding:22px;
                 border-radius:16px;
                 max-width:750px;
-                margin-bottom:12px;
             ">
                 <div style="
                     background:#090909;
@@ -387,59 +413,25 @@ if page == "年度預算總覽":
                     flex-direction:column;
                     gap:9px;
                 ">
-                    <div style="
-                        width:30px;height:30px;border-radius:50%;
-                        background:{light_colors['紅燈']};
-                        box-shadow:0 0 10px {light_colors['紅燈']};
-                    "></div>
-
-                    <div style="
-                        width:30px;height:30px;border-radius:50%;
-                        background:{light_colors['黃燈']};
-                        box-shadow:0 0 10px {light_colors['黃燈']};
-                    "></div>
-
-                    <div style="
-                        width:30px;height:30px;border-radius:50%;
-                        background:{light_colors['綠燈']};
-                        box-shadow:0 0 10px {light_colors['綠燈']};
-                    "></div>
-
-                    <div style="
-                        width:30px;height:30px;border-radius:50%;
-                        background:{light_colors['藍燈']};
-                        box-shadow:0 0 10px {light_colors['藍燈']};
-                    "></div>
+                    {traffic_lights}
                 </div>
 
                 <div style="color:white;">
-                    <h2 style="
-                        margin:0;
-                        color:{light_color};
-                    ">
+                    <h2 style="margin:0;color:{light_color};">
                         {light_status}
                     </h2>
-
-                    <p style="
-                        margin:10px 0 0 0;
-                        font-size:16px;
-                        line-height:1.7;
-                    ">
+                    <p style="margin-top:10px;line-height:1.7;">
                         {light_message}
                     </p>
-
-                    <p style="
-                        margin:5px 0 0 0;
-                        color:#AAAAAA;
-                        font-size:12px;
-                    ">
+                    <small style="color:#AAAAAA;">
                         比較基準：既定全年預算
-                    </p>
+                    </small>
                 </div>
             </div>
             """,
             unsafe_allow_html=True
         )
+
 
         st.markdown("---")
 
