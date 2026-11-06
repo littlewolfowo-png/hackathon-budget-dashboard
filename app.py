@@ -611,7 +611,7 @@ elif page == "部門預算分析":
         # 部門風險燈號
         # =========================
 
-        st.subheader("🚦 部門風險燈號")
+               st.subheader("🚦 部門風險燈號")
 
         risk_columns = [
             dept_col,
@@ -629,9 +629,104 @@ elif page == "部門預算分析":
         ]
 
         if available_columns:
-            st.dataframe(
-                df[available_columns],
-                use_container_width=True
+            risk_df = df[available_columns].copy()
+
+            # 風險燈號顏色設定
+            risk_color_style = JsCode("""
+                function(params) {
+                    const value = String(params.value || "");
+
+                    if (value.includes("紅")) {
+                        return {
+                            'backgroundColor': '#FEE2E2',
+                            'color': '#B91C1C',
+                            'fontWeight': 'bold'
+                        };
+                    }
+                    if (value.includes("黃")) {
+                        return {
+                            'backgroundColor': '#FEF3C7',
+                            'color': '#92400E',
+                            'fontWeight': 'bold'
+                        };
+                    }
+                    if (value.includes("綠")) {
+                        return {
+                            'backgroundColor': '#DCFCE7',
+                            'color': '#166534',
+                            'fontWeight': 'bold'
+                        };
+                    }
+                    if (value.includes("藍")) {
+                        return {
+                            'backgroundColor': '#DBEAFE',
+                            'color': '#1D4ED8',
+                            'fontWeight': 'bold'
+                        };
+                    }
+                    return {};
+                }
+            """)
+
+            gb = GridOptionsBuilder.from_dataframe(risk_df)
+
+            gb.configure_default_column(
+                resizable=True,
+                sortable=True,
+                filter=True
+            )
+
+            # 固定最左側部門欄位
+            gb.configure_column(
+                dept_col,
+                pinned="left",
+                lockPinned=True,
+                minWidth=150
+            )
+
+            # 風險燈號欄位上色
+            if risk_col in risk_df.columns:
+                gb.configure_column(
+                    risk_col,
+                    cellStyle=risk_color_style,
+                    minWidth=120
+                )
+
+            AgGrid(
+                risk_df,
+                gridOptions=gb.build(),
+                height=350,
+                fit_columns_on_grid_load=False,
+                theme="streamlit",
+                allow_unsafe_jscode=True
+            )
+
+        # =========================
+        # 完整資料
+        # =========================
+
+        with st.expander("查看部門完整分析資料"):
+            full_gb = GridOptionsBuilder.from_dataframe(df)
+
+            full_gb.configure_default_column(
+                resizable=True,
+                sortable=True,
+                filter=True
+            )
+
+            full_gb.configure_column(
+                dept_col,
+                pinned="left",
+                lockPinned=True,
+                minWidth=150
+            )
+
+            AgGrid(
+                df,
+                gridOptions=full_gb.build(),
+                height=450,
+                fit_columns_on_grid_load=False,
+                theme="streamlit"
             )
 
         # =========================
