@@ -1,9 +1,13 @@
 
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import json
-from pathlib import Path
+import io
+
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
 
 # =====================================
 # 模組四：智慧預算管理系統
@@ -16,33 +20,97 @@ st.set_page_config(
 )
 
 # =====================================
-# 1. 設定 Google Drive 資料路徑
+# 1. Google Drive 設定
 # =====================================
 
-DATA_DIR = Path(
-    r"G:\.shortcut-targets-by-id\1iuWREO8iwl1iLujq6Rm2UUncIHJZicOR\法巴黑客松\3(含模組12)\模組二最終資料"
-)
+DRIVE_FOLDER_ID = "1xXqMsySR-O0BJU5hGyNS0ZlUqOqmayT1"
+
+DATA_SOURCE_LABEL = "Google Drive：模組二最終資料"
+
+# 使用 Streamlit Secrets 建立 Google 服務帳戶
+try:
+    credentials = service_account.Credentials.from_service_account_info(
+        dict(st.secrets["gcp_service_account"]),
+        scopes=["https://www.googleapis.com/auth/drive.readonly"]
+    )
+
+    drive_service = build(
+        "drive",
+        "v3",
+        credentials=credentials,
+        cache_discovery=False
+    )
+
+    drive_connected = True
+
+except Exception as e:
+    drive_service = None
+    drive_connected = False
+    drive_connection_error = str(e)
+
 
 # =====================================
-# 2. 資料讀取函式
+# 2. Google Drive 檔案讀取函式
 # =====================================
+
+def find_drive_file(filename):
+
+    results = drive_service.files().list(
+        q=(
+            f"'{DRIVE_FOLDER_ID}' in parents "
+            f"and name = '{filename}' "
+            f"and trashed = false"
+        ),
+        spaces="drive",
+        fields="files(id, name)",
+        pageSize=10,
+        supportsAllDrives=True,
+        includeItemsFromAllDrives=True
+    ).execute()
+
+    files = results.get("files", [])
+
+    if not files:
+        raise FileNotFoundError(f"Google Drive 找不到檔案：{filename}")
+
+    return files[0]["id"]
+
+
+def download_drive_file(filename):
+
+    file_id = find_drive_file(filename)
+
+    request = drive_service.files().get_media(
+        fileId=file_id,
+        supportsAllDrives=True
+    )
+
+    return request.execute()
+
 
 @st.cache_data
-def load_csv(file_path):
-    """讀取 CSV，並嘗試不同編碼"""
+def load_csv(file_content, filename):
+
     for encoding in ["utf-8-sig", "utf-8", "big5"]:
+
         try:
-            return pd.read_csv(file_path, encoding=encoding)
+            return pd.read_csv(
+                io.BytesIO(file_content),
+                encoding=encoding
+            )
+
         except UnicodeDecodeError:
             continue
-    raise ValueError(f"無法辨識 CSV 編碼：{file_path.name}")
+
+    raise ValueError(f"無法辨識 CSV 編碼：{filename}")
 
 
 @st.cache_data
-def load_json(file_path):
-    """讀取 JSON"""
-    with open(file_path, "r", encoding="utf-8-sig") as f:
-        return json.load(f)
+def load_json(file_content):
+
+    return json.loads(
+        file_content.decode("utf-8-sig")
+    )
 
 
 # =====================================
@@ -63,15 +131,22 @@ csv_data = {}
 csv_errors = {}
 
 for name, filename in csv_files.items():
-    file_path = DATA_DIR / filename
 
-    if file_path.exists():
+    if drive_connected:
+
         try:
-            csv_data[name] = load_csv(str(file_path))
+            file_content = download_drive_file(filename)
+
+            csv_data[name] = load_csv(
+                file_content,
+                filename
+            )
+
         except Exception as e:
             csv_errors[name] = str(e)
+
     else:
-        csv_errors[name] = f"找不到檔案：{filename}"
+        csv_errors[name] = "Google Drive 連線失敗"
 
 
 # =====================================
@@ -87,15 +162,19 @@ json_data = {}
 json_errors = {}
 
 for name, filename in json_files.items():
-    file_path = DATA_DIR / filename
 
-    if file_path.exists():
+    if drive_connected:
+
         try:
-            json_data[name] = load_json(str(file_path))
+            file_content = download_drive_file(filename)
+
+            json_data[name] = load_json(file_content)
+
         except Exception as e:
             json_errors[name] = str(e)
+
     else:
-        json_errors[name] = f"找不到檔案：{filename}"
+        json_errors[name] = "Google Drive 連線失敗"
 
 
 # =====================================
