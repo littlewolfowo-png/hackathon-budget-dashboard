@@ -474,7 +474,11 @@ if page == "年度預算總覽":
             ]
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+            config={"displayModeBar": False}
+        )
 
         # -----------------------------
         # 4. 原始資料
