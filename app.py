@@ -972,24 +972,103 @@ elif page == "AI 財務顧問":
 
         st.markdown("---")
 
+        
         # ---------------------------------
         # 2. 全公司風險概況
         # ---------------------------------
 
         st.subheader("🚦 全公司風險概況")
 
-        r1, r2, r3, r4 = st.columns(4)
+        # 讀取原始風險統計
+        red_count = risks.get("red_count", 0)
+        yellow_count = risks.get("yellow_count", 0)
+        green_count = risks.get("green_count", 0)
+        blue_count = risks.get("blue_count", 0)
 
-        r1.metric("🔴 紅燈", risks.get("red_count", 0))
-        r2.metric("🟡 黃燈", risks.get("yellow_count", 0))
-        r3.metric("🟢 綠燈", risks.get("green_count", 0))
-        r4.metric("異常支出項目", risks.get("anomaly_count", 0))
+        # 四色風險卡片
+        risk_cards = [
+            ("紅燈", red_count, "#EF4444"),
+            ("黃燈", yellow_count, "#EAB308"),
+            ("綠燈", green_count, "#22C55E"),
+            ("藍燈", blue_count, "#3B82F6")
+        ]
 
-        st.write(
-            f"平均資料品質評分：{risks.get('average_data_quality_score', 0)}"
+        cards_html = ""
+
+        for label, count, color in risk_cards:
+
+            cards_html += f"""
+            <div style="
+                flex:1;
+                min-width:120px;
+                background:#202124;
+                border:2px solid {color};
+                border-radius:14px;
+                padding:18px;
+                box-shadow:0 0 12px {color}55;
+                text-align:center;
+            ">
+                <div style="
+                    color:{color};
+                    font-size:17px;
+                    font-weight:bold;
+                ">
+                    ● {label}
+                </div>
+
+                <div style="
+                    color:white;
+                    font-size:32px;
+                    font-weight:bold;
+                    margin-top:10px;
+                ">
+                    {count}
+                </div>
+
+                <div style="
+                    color:#AAAAAA;
+                    font-size:12px;
+                ">
+                    風險項目
+                </div>
+            </div>
+            """
+
+        st.html(
+            f"""
+            <div style="
+                display:flex;
+                flex-wrap:wrap;
+                gap:14px;
+                width:100%;
+            ">
+                {cards_html}
+            </div>
+            """
+        )
+
+        # 異常支出與資料品質
+        st.markdown("### 📋 其他風險指標")
+
+        anomaly_count = risks.get("anomaly_count", 0)
+        quality_score = risks.get(
+            "average_data_quality_score", 0
+        )
+
+        a1, a2 = st.columns(2)
+
+        a1.metric(
+            "異常支出項目",
+            anomaly_count
+        )
+
+        a2.metric(
+            "平均資料品質評分",
+            quality_score
         )
 
         st.markdown("---")
+
 
         # ---------------------------------
         # 3. 部門風險分析
