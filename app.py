@@ -611,7 +611,7 @@ elif page == "部門預算分析":
         # 部門風險燈號
         # =========================
 
-               st.subheader("🚦 部門風險燈號")
+        st.subheader("🚦 部門風險燈號")
 
         risk_columns = [
             dept_col,
