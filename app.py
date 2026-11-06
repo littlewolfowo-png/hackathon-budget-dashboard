@@ -710,29 +710,10 @@ elif page == "部門預算分析":
         # 完整資料
         # =========================
 
-        with st.expander("查看部門完整分析資料"):
-            full_gb = GridOptionsBuilder.from_dataframe(df)
-
-            full_gb.configure_default_column(
-                resizable=True,
-                sortable=True,
-                filter=True
-            )
-
-            full_gb.configure_column(
-                dept_col,
-                pinned="left",
-                lockPinned=True,
-                minWidth=150
-            )
-
-            AgGrid(
-                df,
-                gridOptions=full_gb.build(),
-                height=450,
-                fit_columns_on_grid_load=False,
-                theme="streamlit"
-            )
+                with st.expander("查看部門完整分析資料"):
+            st.write("資料筆數：", len(df))
+            st.write("欄位名稱：", df.columns.tolist())
+            st.dataframe(df, use_container_width=True)
 
     else:
         st.warning("目前無法讀取部門分析 CSV")
