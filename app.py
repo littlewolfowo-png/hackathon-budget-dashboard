@@ -460,7 +460,8 @@ if page == "年度預算總覽":
         fig.update_traces(
             texttemplate="NT$ %{y:,.0f}",
             textposition="outside",
-            cliponaxis=False
+            cliponaxis=False,
+            width=0.35
         )
 
         fig.update_layout(
