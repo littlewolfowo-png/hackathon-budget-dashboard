@@ -944,7 +944,7 @@ elif page == "資料檢查":
 
     st.header("🔍 模組二、模組三資料檢查")
 
-    st.write(f"資料來源：`{DATA_DIR}`")
+    st.write(f"資料來源：{DATA_SOURCE_LABEL}")
 
     # -------------------------------
     # 一、整體檔案讀取狀態
